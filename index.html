@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刘哥发话了，快听刘哥讲话！</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: black;
+            font-size: 1.5em;
+            margin: 20px 0;
+        }
+        .container {
+            margin: 20px auto;
+            padding: 20px;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 600px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px; /* 调大高度 */
+            padding: 10px; /* 调整内边距 */
+            margin: 10px 0;
+            box-sizing: border-box;
+            resize: none; /* 禁止调整大小 */
+            background-color: white; /* 设置相同的背景颜色 */
+            border: 1px solid #ccc; /* 与输出框相同的边框颜色 */
+            white-space: pre-wrap; /* 设置自动换行 */
+            overflow: auto; /* 允许滚动 */
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .button-container button {
+            padding: 10px 20px;
+            margin: 0;
+            border: none;
+            cursor: pointer;
+            flex: 1;
+            margin-right: 5px;
+        }
+        .button-container button:last-child {
+            margin-right: 0;
+        }
+        .button-container .encrypt-button {
+            background-color: darkblue;
+            color: white;
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+        .button-container .decrypt-button {
+            background-color: blue;
+            color: white;
+        }
+        .button-container .copy-button {
+            background-color: lightblue;
+            color: black;
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        .button-container button:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <h1>刘哥发话了，快听刘哥讲话！</h1>
+    <div class="container">
+        <textarea id="inputBox" class="input-box" placeholder="输入内容" style="white-space: pre-wrap;"></textarea> <!-- 修改为textarea并设置自动换行 -->
+        <div class="button-container">
+            <button class="encrypt-button" onclick="encryptText()">加密</button>
+            <button class="decrypt-button" onclick="decryptText()">解密</button>
+            <button class="copy-button" onclick="copyText()">复制结果</button>
+        </div>
+        <textarea id="outputBox" class="output-box" placeholder="输出内容" readonly></textarea> <!-- 设置为只读 -->
+    </div>
+
+    <script>
+        const chineseCharacters = "这就是我们的刘哥汉堡炸鸡配可乐放学时间消狂拽酷炫小让对手蒙圈拜服";
+
+        function encryptText() {
+            var inputText = document.getElementById('inputBox').value;
+            var binaryString = '';
+            for (var i = 0; i < inputText.length; i++) {
+                var charCode = inputText.charCodeAt(i);
+                binaryString += charCode.toString(2).padStart(16, '0'); // 使用16位二进制编码
+            }
+
+            // 补0直到位数可以被5整除
+            while (binaryString.length % 5 !== 0) {
+                binaryString += '0';
+            }
+
+            var resultText = '';
+            for (var i = 0; i < binaryString.length; i += 5) {
+                var binaryGroup = binaryString.substring(i, i + 5);
+                var decimalValue = parseInt(binaryGroup, 2);
+                if (decimalValue >= 0 && decimalValue < chineseCharacters.length) {
+                    resultText += chineseCharacters[decimalValue];
+                } else {
+                    alert("加密失败，生成的二进制数超出汉字序列范围。");
+                    return;
+                }
+            }
+            document.getElementById('outputBox').value = resultText;
+        }
+
+        function decryptText() {
+            var encryptedText = document.getElementById('outputBox').value;
+            var binaryString = '';
+            for (var i = 0; i < encryptedText.length; i++) {
+                var charIndex = chineseCharacters.indexOf(encryptedText[i]);
+                if (charIndex === -1) {
+                    alert("解密失败，输出框中的内容包含无效的汉字。");
+                    return;
+                }
+                binaryString += charIndex.toString(2).padStart(5, '0');
+            }
+
+            // 去掉补的0，直到位数可以被16整除
+            while (binaryString.length % 16 !== 0) {
+                binaryString = binaryString.slice(0, -1);
+            }
+
+            var resultText = '';
+            for (var i = 0; i < binaryString.length; i += 16) {
+                var binaryGroup = binaryString.substring(i, i + 16);
+                var decimalValue = parseInt(binaryGroup, 2);
+                if (decimalValue >= 0 && decimalValue <= 65535) { // 16位二进制编码的最大值
+                    resultText += String.fromCharCode(decimalValue);
+                } else {
+                    alert("解密失败，生成的二进制数超出字符范围。");
+                    return;
+                }
+            }
+            document.getElementById('outputBox').value = resultText;
+        }
+
+        function copyText() {
+            var outputText = document.getElementById('outputBox').value;
+            if (outputText) {
+                navigator.clipboard.writeText(outputText).then(function() {
+                    alert("结果已复制到剪贴板");
+                }, function(err) {
+                    console.error("复制失败: ", err);
+                    alert("复制失败，请重试。");
+                });
+            } else {
+                alert("输出框中没有内容可复制。");
+            }
+        }
+    </script>
+</body>
+</html>
