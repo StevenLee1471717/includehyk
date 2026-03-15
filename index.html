@@ -116,12 +116,12 @@
         }
 
         function decryptText() {
-            var encryptedText = document.getElementById('outputBox').value;
+            var encryptedText = document.getElementById('inputBox').value;
             var binaryString = '';
             for (var i = 0; i < encryptedText.length; i++) {
                 var charIndex = chineseCharacters.indexOf(encryptedText[i]);
                 if (charIndex === -1) {
-                    alert("解密失败，输出框中的内容包含无效的汉字。");
+                    alert("解密失败，输入框中的内容包含无效的汉字。");
                     return;
                 }
                 binaryString += charIndex.toString(2).padStart(5, '0');
