@@ -3,162 +3,793 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>刘哥发话了，快听刘哥讲话！</title>
+    <title>刘哥密语工坊</title>
     <style>
+        :root {
+            color-scheme: dark;
+            --bg-1: #07111f;
+            --bg-2: #102545;
+            --panel: rgba(10, 19, 36, 0.72);
+            --panel-border: rgba(255, 255, 255, 0.12);
+            --text-main: #ecf3ff;
+            --text-soft: #99acd4;
+            --primary: #62a5ff;
+            --primary-strong: #3a7dff;
+            --secondary: #7df9d0;
+            --warning: #ffc978;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
             margin: 0;
-            padding: 0;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at top, rgba(98, 165, 255, 0.22), transparent 35%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2) 55%, #08101b);
+            overflow-x: hidden;
         }
+
+        #particleCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .page-shell {
+            position: relative;
+            z-index: 1;
+            width: min(1120px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 48px 0 40px;
+        }
+
+        .hero-card,
+        .workspace-card,
+        .tips-card {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+        }
+
+        .hero-card {
+            position: relative;
+            overflow: hidden;
+            padding: 28px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.9fr);
+            gap: 24px;
+            align-items: center;
+        }
+
+        .hero-card::after {
+            content: "";
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            right: -80px;
+            top: -100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(125, 249, 208, 0.35), transparent 65%);
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(98, 165, 255, 0.14);
+            border: 1px solid rgba(98, 165, 255, 0.2);
+            color: #cfe2ff;
+            font-size: 13px;
+            letter-spacing: 0.06em;
+        }
+
         h1 {
-            color: black;
-            font-size: 1.5em;
-            margin: 20px 0;
+            margin: 18px 0 12px;
+            font-size: clamp(2rem, 4vw, 3.6rem);
+            line-height: 1.05;
         }
-        .container {
-            margin: 20px auto;
-            padding: 20px;
-            box-sizing: border-box;
-            width: 100%;
-            max-width: 600px;
+
+        .hero-description {
+            margin: 0;
+            max-width: 640px;
+            color: var(--text-soft);
+            font-size: 1rem;
+            line-height: 1.75;
         }
-        textarea {
-            width: 100%;
-            height: 100px; /* 调大高度 */
-            padding: 10px; /* 调整内边距 */
-            margin: 10px 0;
-            box-sizing: border-box;
-            resize: none; /* 禁止调整大小 */
-            background-color: white; /* 设置相同的背景颜色 */
-            border: 1px solid #ccc; /* 与输出框相同的边框颜色 */
-            white-space: pre-wrap; /* 设置自动换行 */
-            overflow: auto; /* 允许滚动 */
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 22px;
         }
-        .button-container {
+
+        .pill-button,
+        .button-container button {
+            border: 0;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease, background 0.22s ease;
+            font-weight: 600;
+        }
+
+        .pill-button {
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .pill-button.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+            color: #fff;
+            box-shadow: 0 16px 30px rgba(58, 125, 255, 0.28);
+        }
+
+        .hero-stats {
+            display: grid;
+            gap: 14px;
+        }
+
+        .stat-card {
+            padding: 18px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .stat-card strong {
+            display: block;
+            font-size: 1.65rem;
+            margin-top: 8px;
+        }
+
+        .stat-card span {
+            color: var(--text-soft);
+            font-size: 0.95rem;
+        }
+
+        .workspace-card {
+            margin-top: 24px;
+            padding: 28px;
+        }
+
+        .toolbar {
             display: flex;
             justify-content: space-between;
-            width: 100%;
-            margin: 10px 0;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
         }
-        .button-container button {
-            padding: 10px 20px;
+
+        .toolbar h2,
+        .tips-card h3 {
             margin: 0;
-            border: none;
+            font-size: 1.2rem;
+        }
+
+        .toolbar p {
+            margin: 6px 0 0;
+            color: var(--text-soft);
+            font-size: 0.95rem;
+        }
+
+        .example-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .example-chip {
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
             cursor: pointer;
-            flex: 1;
-            margin-right: 5px;
         }
-        .button-container button:last-child {
-            margin-right: 0;
+
+        .editor-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
         }
-        .button-container .encrypt-button {
-            background-color: darkblue;
-            color: white;
-            border-top-left-radius: 8px;
-            border-bottom-left-radius: 8px;
+
+        .panel {
+            padding: 18px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .button-container .decrypt-button {
-            background-color: blue;
-            color: white;
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
         }
-        .button-container .copy-button {
-            background-color: lightblue;
-            color: black;
-            border-top-right-radius: 8px;
-            border-bottom-right-radius: 8px;
+
+        .panel-header label {
+            font-size: 1rem;
+            font-weight: 600;
         }
-        .button-container button:hover {
-            opacity: 0.8;
+
+        .panel-header span {
+            color: var(--text-soft);
+            font-size: 0.92rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 240px;
+            padding: 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(6, 12, 24, 0.72);
+            color: var(--text-main);
+            font: inherit;
+            line-height: 1.7;
+            resize: vertical;
+            outline: none;
+            white-space: pre-wrap;
+            transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+        }
+
+        textarea:focus {
+            border-color: rgba(98, 165, 255, 0.85);
+            box-shadow: 0 0 0 4px rgba(98, 165, 255, 0.14);
+            transform: translateY(-1px);
+        }
+
+        textarea::placeholder {
+            color: rgba(236, 243, 255, 0.4);
+        }
+
+        .button-container {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        .button-container button {
+            padding: 14px 16px;
+            color: #fff;
+            box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18);
+        }
+
+        .button-container button:hover,
+        .pill-button:hover,
+        .example-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px rgba(0, 0, 0, 0.22);
+        }
+
+        .encrypt-button {
+            background: linear-gradient(135deg, #3b82f6, #2454ff);
+        }
+
+        .decrypt-button {
+            background: linear-gradient(135deg, #14b8a6, #1d9c84);
+        }
+
+        .copy-button {
+            background: linear-gradient(135deg, #7c6df3, #5f4be0);
+        }
+
+        .swap-button {
+            background: linear-gradient(135deg, #f59e0b, #ea580c);
+        }
+
+        .clear-button {
+            background: linear-gradient(135deg, #ef4444, #d946ef);
+        }
+
+        .status-bar,
+        .quick-info {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .info-card {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .info-card strong,
+        .info-card span {
+            display: block;
+        }
+
+        .info-card strong {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+
+        .info-card span {
+            color: var(--text-soft);
+            font-size: 0.92rem;
+        }
+
+        .tips-card {
+            margin-top: 24px;
+            padding: 22px 24px;
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+        }
+
+        .tips-grid .info-card {
+            min-height: 100%;
+        }
+
+        .toast {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            min-width: 220px;
+            max-width: min(420px, calc(100vw - 40px));
+            padding: 14px 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(8, 14, 26, 0.9);
+            color: #fff;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 2;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            border-color: rgba(125, 249, 208, 0.35);
+        }
+
+        .toast.error {
+            border-color: rgba(255, 120, 120, 0.35);
+        }
+
+        @media (max-width: 900px) {
+            .hero-card,
+            .editor-grid,
+            .tips-grid,
+            .status-bar,
+            .quick-info {
+                grid-template-columns: 1fr;
+            }
+
+            .button-container {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .button-container button:last-child {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .page-shell {
+                width: min(100% - 20px, 1120px);
+                padding-top: 20px;
+            }
+
+            .hero-card,
+            .workspace-card,
+            .tips-card {
+                border-radius: 22px;
+                padding: 20px;
+            }
+
+            .button-container {
+                grid-template-columns: 1fr;
+            }
+
+            textarea {
+                min-height: 200px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>刘哥发话了，快听刘哥讲话！</h1>
-    <div class="container">
-        <textarea id="inputBox" class="input-box" placeholder="输入内容" style="white-space: pre-wrap;"></textarea> <!-- 修改为textarea并设置自动换行 -->
-        <div class="button-container">
-            <button class="encrypt-button" onclick="encryptText()">加密</button>
-            <button class="decrypt-button" onclick="decryptText()">解密</button>
-            <button class="copy-button" onclick="copyText()">复制结果</button>
-        </div>
-        <textarea id="outputBox" class="output-box" placeholder="输出内容" readonly></textarea> <!-- 设置为只读 -->
-    </div>
+    <canvas id="particleCanvas" aria-hidden="true"></canvas>
+    <main class="page-shell">
+        <section class="hero-card">
+            <div>
+                <div class="hero-badge">✨ UI / UX 升级版 · 密语编码器</div>
+                <h1>刘哥密语工坊</h1>
+                <p class="hero-description">
+                    把普通文本快速转换成专属汉字密语，也可以一键还原。现在提供更顺手的输入体验、即时反馈、粒子背景、草稿保存、快捷示例和结果回填，让这个工具不只是能用，而是更好用。
+                </p>
+                <div class="hero-actions">
+                    <button class="pill-button primary" type="button" onclick="scrollToWorkspace()">立即开始</button>
+                    <button class="pill-button" type="button" onclick="fillExample('今天放学一起去吃汉堡炸鸡配可乐！')">试试示例文案</button>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <span>支持双向转换</span>
+                    <strong>加密 / 解密</strong>
+                </div>
+                <div class="stat-card">
+                    <span>快捷操作</span>
+                    <strong>复制 · 清空 · 回填</strong>
+                </div>
+                <div class="stat-card">
+                    <span>效率增强</span>
+                    <strong>自动保存草稿</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="workspace-card" id="workspace">
+            <div class="toolbar">
+                <div>
+                    <h2>开始转换</h2>
+                    <p>支持 Ctrl + Enter 快速加密，Ctrl + Shift + Enter 快速解密。</p>
+                </div>
+                <div class="example-list">
+                    <button class="example-chip" type="button" onclick="fillExample('刘哥今天说：放学冲！')">校园通知</button>
+                    <button class="example-chip" type="button" onclick="fillExample('这是一条需要保密的留言。')">秘密留言</button>
+                    <button class="example-chip" type="button" onclick="fillExample('123456，今晚八点集合。')">数字混合</button>
+                </div>
+            </div>
+
+            <div class="editor-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <label for="inputBox">输入区</label>
+                        <span id="inputMeta">0 个字符</span>
+                    </div>
+                    <textarea id="inputBox" class="input-box" placeholder="输入需要加密的原文，或者输入密文进行解密。"></textarea>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <label for="outputBox">结果区</label>
+                        <span id="outputMeta">0 个字符</span>
+                    </div>
+                    <textarea id="outputBox" class="output-box" placeholder="这里会显示转换结果。" readonly></textarea>
+                </div>
+            </div>
+
+            <div class="button-container">
+                <button class="encrypt-button" type="button" onclick="encryptText()">加密</button>
+                <button class="decrypt-button" type="button" onclick="decryptText()">解密</button>
+                <button class="copy-button" type="button" onclick="copyText()">复制结果</button>
+                <button class="swap-button" type="button" onclick="useOutputAsInput()">结果回填</button>
+                <button class="clear-button" type="button" onclick="clearAll()">清空内容</button>
+            </div>
+
+            <div class="status-bar">
+                <div class="info-card">
+                    <strong id="modeLabel">等待操作</strong>
+                    <span>根据你的输入执行加密或解密。</span>
+                </div>
+                <div class="info-card">
+                    <strong id="binaryHint">0 bit</strong>
+                    <span>当前输入换算后的二进制位数提示。</span>
+                </div>
+                <div class="info-card">
+                    <strong id="storageHint">草稿未保存</strong>
+                    <span>输入会自动保存在当前浏览器。</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="tips-card">
+            <h3>实用功能</h3>
+            <div class="tips-grid">
+                <div class="info-card">
+                    <strong>即时提醒</strong>
+                    <span>用右下角浮层代替弹窗反馈，体验更顺滑。</span>
+                </div>
+                <div class="info-card">
+                    <strong>示例快捷填充</strong>
+                    <span>一键带入常见文案，方便直接体验编码效果。</span>
+                </div>
+                <div class="info-card">
+                    <strong>结果回填</strong>
+                    <span>解密前可直接把结果送回输入框，减少复制粘贴。</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script>
         const chineseCharacters = "这就是我们的刘哥汉堡炸鸡配可乐放学时间消狂拽酷炫小让对手蒙圈拜服";
+        const draftStorageKey = "includehyk-draft";
+        const inputBox = document.getElementById("inputBox");
+        const outputBox = document.getElementById("outputBox");
+        const toast = document.getElementById("toast");
+        const inputMeta = document.getElementById("inputMeta");
+        const outputMeta = document.getElementById("outputMeta");
+        const modeLabel = document.getElementById("modeLabel");
+        const binaryHint = document.getElementById("binaryHint");
+        const storageHint = document.getElementById("storageHint");
+
+        let toastTimer;
+
+        function showToast(message, type) {
+            toast.textContent = message;
+            toast.className = "toast show " + (type || "");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function() {
+                toast.className = "toast " + (type || "");
+            }, 2200);
+        }
+
+        function updateStats() {
+            inputMeta.textContent = inputBox.value.length + " 个字符";
+            outputMeta.textContent = outputBox.value.length + " 个字符";
+            binaryHint.textContent = calculateBinaryHint(inputBox.value) + " bit";
+        }
+
+        function isEncryptedText(text) {
+            return text && Array.from(text).every(function(character) {
+                return chineseCharacters.indexOf(character) !== -1;
+            });
+        }
+
+        function calculateBinaryHint(text) {
+            if (!text) {
+                return 0;
+            }
+            return text.length * (isEncryptedText(text) ? 5 : 16);
+        }
+
+        function saveDraft() {
+            localStorage.setItem(draftStorageKey, inputBox.value);
+            storageHint.textContent = inputBox.value ? "草稿已自动保存" : "草稿已清空";
+        }
+
+        function restoreDraft() {
+            const draft = localStorage.getItem(draftStorageKey);
+            if (draft) {
+                inputBox.value = draft;
+                storageHint.textContent = "已恢复上次草稿";
+            }
+            updateStats();
+        }
+
+        function fillExample(text) {
+            inputBox.value = text;
+            outputBox.value = "";
+            modeLabel.textContent = "示例已载入";
+            saveDraft();
+            updateStats();
+            showToast("示例内容已填入输入区。", "success");
+        }
+
+        function scrollToWorkspace() {
+            document.getElementById("workspace").scrollIntoView({ behavior: "smooth", block: "start" });
+            inputBox.focus();
+        }
 
         function encryptText() {
-            var inputText = document.getElementById('inputBox').value;
-            var binaryString = '';
-            for (var i = 0; i < inputText.length; i++) {
-                var charCode = inputText.charCodeAt(i);
-                binaryString += charCode.toString(2).padStart(16, '0'); // 使用16位二进制编码
+            const inputText = inputBox.value;
+            if (!inputText) {
+                showToast("请先输入要加密的内容。", "error");
+                return;
             }
 
-            // 补0直到位数可以被5整除
+            let binaryString = "";
+            for (let i = 0; i < inputText.length; i++) {
+                const charCode = inputText.charCodeAt(i);
+                binaryString += charCode.toString(2).padStart(16, "0");
+            }
+
             while (binaryString.length % 5 !== 0) {
-                binaryString += '0';
+                binaryString += "0";
             }
 
-            var resultText = '';
-            for (var i = 0; i < binaryString.length; i += 5) {
-                var binaryGroup = binaryString.substring(i, i + 5);
-                var decimalValue = parseInt(binaryGroup, 2);
+            let resultText = "";
+            for (let i = 0; i < binaryString.length; i += 5) {
+                const binaryGroup = binaryString.substring(i, i + 5);
+                const decimalValue = parseInt(binaryGroup, 2);
                 if (decimalValue >= 0 && decimalValue < chineseCharacters.length) {
                     resultText += chineseCharacters[decimalValue];
                 } else {
-                    alert("加密失败，生成的二进制数超出汉字序列范围。");
+                    showToast("加密失败，生成的二进制数超出汉字序列范围。", "error");
                     return;
                 }
             }
-            document.getElementById('outputBox').value = resultText;
+
+            outputBox.value = resultText;
+            modeLabel.textContent = "已完成加密";
+            updateStats();
+            showToast("加密成功，结果已生成。", "success");
         }
 
         function decryptText() {
-            var encryptedText = document.getElementById('inputBox').value;
-            var binaryString = '';
-            for (var i = 0; i < encryptedText.length; i++) {
-                var charIndex = chineseCharacters.indexOf(encryptedText[i]);
-                if (charIndex === -1) {
-                    alert("解密失败，输入框中的内容包含无效的汉字。");
-                    return;
-                }
-                binaryString += charIndex.toString(2).padStart(5, '0');
+            const encryptedText = inputBox.value;
+            if (!encryptedText) {
+                showToast("请先输入要解密的密文。", "error");
+                return;
             }
 
-            // 去掉补的0，直到位数可以被16整除
+            let binaryString = "";
+            for (let i = 0; i < encryptedText.length; i++) {
+                const charIndex = chineseCharacters.indexOf(encryptedText[i]);
+                if (charIndex === -1) {
+                    showToast("解密失败，输入内容包含无效汉字。", "error");
+                    return;
+                }
+                binaryString += charIndex.toString(2).padStart(5, "0");
+            }
+
             while (binaryString.length % 16 !== 0) {
                 binaryString = binaryString.slice(0, -1);
             }
 
-            var resultText = '';
-            for (var i = 0; i < binaryString.length; i += 16) {
-                var binaryGroup = binaryString.substring(i, i + 16);
-                var decimalValue = parseInt(binaryGroup, 2);
-                if (decimalValue >= 0 && decimalValue <= 65535) { // 16位二进制编码的最大值
+            let resultText = "";
+            for (let i = 0; i < binaryString.length; i += 16) {
+                const binaryGroup = binaryString.substring(i, i + 16);
+                const decimalValue = parseInt(binaryGroup, 2);
+                if (decimalValue >= 0 && decimalValue <= 65535) {
                     resultText += String.fromCharCode(decimalValue);
                 } else {
-                    alert("解密失败，生成的二进制数超出字符范围。");
+                    showToast("解密失败，生成的二进制数超出字符范围。", "error");
                     return;
                 }
             }
-            document.getElementById('outputBox').value = resultText;
+
+            outputBox.value = resultText;
+            modeLabel.textContent = "已完成解密";
+            updateStats();
+            showToast("解密成功，内容已还原。", "success");
         }
 
-        function copyText() {
-            var outputText = document.getElementById('outputBox').value;
-            if (outputText) {
-                navigator.clipboard.writeText(outputText).then(function() {
-                    alert("结果已复制到剪贴板");
-                }, function(err) {
-                    console.error("复制失败: ", err);
-                    alert("复制失败，请重试。");
-                });
-            } else {
-                alert("输出框中没有内容可复制。");
+        async function copyText() {
+            const outputText = outputBox.value;
+            if (!outputText) {
+                showToast("输出框中没有内容可复制。", "error");
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(outputText);
+                showToast("结果已复制到剪贴板。", "success");
+            } catch (error) {
+                outputBox.removeAttribute("readonly");
+                outputBox.select();
+                document.execCommand("copy");
+                outputBox.setAttribute("readonly", "readonly");
+                showToast("已尝试复制结果，如失败请手动复制。", "success");
+                console.error("复制失败，已使用回退方案: ", error);
             }
         }
+
+        function useOutputAsInput() {
+            if (!outputBox.value) {
+                showToast("当前没有结果可回填。", "error");
+                return;
+            }
+            inputBox.value = outputBox.value;
+            outputBox.value = "";
+            modeLabel.textContent = "结果已回填";
+            saveDraft();
+            updateStats();
+            inputBox.focus();
+            showToast("结果已回填到输入区。", "success");
+        }
+
+        function clearAll() {
+            inputBox.value = "";
+            outputBox.value = "";
+            modeLabel.textContent = "内容已清空";
+            saveDraft();
+            updateStats();
+            showToast("输入与输出内容已清空。", "success");
+        }
+
+        inputBox.addEventListener("input", function() {
+            saveDraft();
+            updateStats();
+            modeLabel.textContent = "等待操作";
+        });
+
+        inputBox.addEventListener("keydown", function(event) {
+            if (event.ctrlKey && event.shiftKey && event.key === "Enter") {
+                event.preventDefault();
+                decryptText();
+                return;
+            }
+
+            if (event.ctrlKey && event.key === "Enter") {
+                event.preventDefault();
+                encryptText();
+            }
+        });
+
+        function setupParticles() {
+            const canvas = document.getElementById("particleCanvas");
+            const ctx = canvas.getContext("2d");
+            const particles = [];
+            const particleCount = window.innerWidth < 768 ? 28 : 48;
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            function createParticles() {
+                particles.length = 0;
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 2.6 + 1,
+                        speedX: (Math.random() - 0.5) * 0.35,
+                        speedY: (Math.random() - 0.5) * 0.35,
+                        alpha: Math.random() * 0.55 + 0.18
+                    });
+                }
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(function(particle) {
+                    particle.x += particle.speedX;
+                    particle.y += particle.speedY;
+
+                    if (particle.x < 0 || particle.x > canvas.width) {
+                        particle.speedX *= -1;
+                    }
+                    if (particle.y < 0 || particle.y > canvas.height) {
+                        particle.speedY *= -1;
+                    }
+
+                    ctx.beginPath();
+                    ctx.fillStyle = "rgba(125, 249, 208, " + particle.alpha + ")";
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                requestAnimationFrame(drawParticles);
+            }
+
+            resizeCanvas();
+            createParticles();
+            drawParticles();
+
+            window.addEventListener("resize", function() {
+                resizeCanvas();
+                createParticles();
+            });
+        }
+
+        restoreDraft();
+        setupParticles();
+        updateStats();
     </script>
 </body>
 </html>
