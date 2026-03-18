@@ -423,7 +423,7 @@
     <main class="page-shell">
         <section class="hero-card">
             <div>
-                <div class="hero-badge">✨ UI / UX 升级版 · 密语编码器</div>
+                <div class="hero-badge">✨ UI/UX 升级版 · 密语编码器</div>
                 <h1>刘哥密语工坊</h1>
                 <p class="hero-description">
                     把普通文本快速转换成专属汉字密语，也可以一键还原。现在提供更顺手的输入体验、即时反馈、粒子背景、草稿保存、快捷示例和结果回填，让这个工具不只是能用，而是更好用。
@@ -453,7 +453,7 @@
             <div class="toolbar">
                 <div>
                     <h2>开始转换</h2>
-                    <p>支持 Ctrl + Enter 快速加密，Ctrl + Shift + Enter 快速解密。</p>
+                    <p>支持快捷键：Ctrl/Cmd + Enter 快速加密，Ctrl/Cmd + Shift + Enter 快速解密。</p>
                 </div>
                 <div class="example-list">
                     <button class="example-chip" type="button" onclick="fillExample('刘哥今天说：放学冲！')">校园通知</button>
@@ -526,7 +526,15 @@
 
     <script>
         const chineseCharacters = "这就是我们的刘哥汉堡炸鸡配可乐放学时间消狂拽酷炫小让对手蒙圈拜服";
-        const draftStorageKey = "includehyk-draft";
+        const draftStorageKey = "cipher-tool-draft";
+        const MOBILE_BREAKPOINT = 768;
+        const MOBILE_PARTICLE_COUNT = 28;
+        const DESKTOP_PARTICLE_COUNT = 48;
+        const MIN_PARTICLE_SIZE = 1;
+        const PARTICLE_SIZE_RANGE = 2.6;
+        const PARTICLE_SPEED_RANGE = 0.35;
+        const MIN_PARTICLE_ALPHA = 0.18;
+        const PARTICLE_ALPHA_RANGE = 0.55;
         const inputBox = document.getElementById("inputBox");
         const outputBox = document.getElementById("outputBox");
         const toast = document.getElementById("toast");
@@ -679,12 +687,23 @@
                 await navigator.clipboard.writeText(outputText);
                 showToast("结果已复制到剪贴板。", "success");
             } catch (error) {
-                outputBox.removeAttribute("readonly");
-                outputBox.select();
-                document.execCommand("copy");
-                outputBox.setAttribute("readonly", "readonly");
-                showToast("已尝试复制结果，如失败请手动复制。", "success");
-                console.error("复制失败，已使用回退方案: ", error);
+                try {
+                    outputBox.readOnly = false;
+                    outputBox.select();
+                    const copied = document.execCommand("copy");
+
+                    if (copied) {
+                        showToast("结果已复制到剪贴板。", "success");
+                    } else {
+                        showToast("复制失败，请手动复制结果。", "error");
+                    }
+                } catch (fallbackError) {
+                    showToast("复制失败，请手动复制结果。", "error");
+                    console.error("复制失败，回退方案也失败了: ", fallbackError);
+                } finally {
+                    outputBox.readOnly = true;
+                }
+                console.error("复制失败，已尝试回退方案: ", error);
             }
         }
 
@@ -718,13 +737,15 @@
         });
 
         inputBox.addEventListener("keydown", function(event) {
-            if (event.ctrlKey && event.shiftKey && event.key === "Enter") {
+            const hasPrimaryModifier = event.ctrlKey || event.metaKey;
+
+            if (hasPrimaryModifier && event.shiftKey && event.key === "Enter") {
                 event.preventDefault();
                 decryptText();
                 return;
             }
 
-            if (event.ctrlKey && event.key === "Enter") {
+            if (hasPrimaryModifier && event.key === "Enter") {
                 event.preventDefault();
                 encryptText();
             }
@@ -734,7 +755,7 @@
             const canvas = document.getElementById("particleCanvas");
             const ctx = canvas.getContext("2d");
             const particles = [];
-            const particleCount = window.innerWidth < 768 ? 28 : 48;
+            const particleCount = window.innerWidth < MOBILE_BREAKPOINT ? MOBILE_PARTICLE_COUNT : DESKTOP_PARTICLE_COUNT;
 
             function resizeCanvas() {
                 canvas.width = window.innerWidth;
@@ -747,10 +768,10 @@
                     particles.push({
                         x: Math.random() * canvas.width,
                         y: Math.random() * canvas.height,
-                        size: Math.random() * 2.6 + 1,
-                        speedX: (Math.random() - 0.5) * 0.35,
-                        speedY: (Math.random() - 0.5) * 0.35,
-                        alpha: Math.random() * 0.55 + 0.18
+                        size: Math.random() * PARTICLE_SIZE_RANGE + MIN_PARTICLE_SIZE,
+                        speedX: (Math.random() - 0.5) * PARTICLE_SPEED_RANGE,
+                        speedY: (Math.random() - 0.5) * PARTICLE_SPEED_RANGE,
+                        alpha: Math.random() * PARTICLE_ALPHA_RANGE + MIN_PARTICLE_ALPHA
                     });
                 }
             }
