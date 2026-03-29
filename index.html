@@ -544,6 +544,7 @@
 
     <script>
         const defaultCipherKey = "这就是我们的刘哥汉堡炸鸡配可乐放学时间消狂拽酷炫小让对手蒙圈拜服";
+        const KEY_LENGTH = 32;
         const draftStorageKey = "cipher-tool-draft";
         const cipherKeyStorageKey = "cipher-tool-key";
         const PARTICLE_COMPACT_BREAKPOINT = 900;
@@ -583,13 +584,13 @@
 
         function updateStats() {
             const cipherKey = keyBox.value;
-            const keyLength = Array.from(cipherKey).length;
+            const currentKeyLength = Array.from(cipherKey).length;
 
             if (isValidCipherKey(cipherKey)) {
-                keyMeta.textContent = keyLength + " / 32 字符 · 密钥可用";
+                keyMeta.textContent = currentKeyLength + " / " + KEY_LENGTH + " 字符 · 密钥可用";
                 keyBox.removeAttribute("aria-invalid");
             } else {
-                keyMeta.textContent = keyLength + " / 32 字符 · 需要 32 个不重复字符";
+                keyMeta.textContent = currentKeyLength + " / " + KEY_LENGTH + " 字符 · 需要 " + KEY_LENGTH + " 个不重复字符";
                 keyBox.setAttribute("aria-invalid", "true");
             }
 
@@ -618,19 +619,19 @@
 
         function isValidCipherKey(cipherKey) {
             const characters = Array.from(cipherKey);
-            return characters.length === 32 && new Set(characters).size === characters.length;
+            return characters.length === KEY_LENGTH && new Set(characters).size === characters.length;
         }
 
         function getCipherKey() {
-            return isValidCipherKey(keyBox.value) ? keyBox.value : "";
+            return isValidCipherKey(keyBox.value) ? keyBox.value : null;
         }
 
         function getCipherKeyOrShowError() {
             const cipherKey = getCipherKey();
             if (!cipherKey) {
-                showToast("请先填写 32 个互不重复的密钥字符。", "error");
+                showToast("请先填写 " + KEY_LENGTH + " 个互不重复的密钥字符。", "error");
                 keyBox.focus();
-                return "";
+                return null;
             }
             return cipherKey;
         }
@@ -655,7 +656,14 @@
 
         function restoreCipherKey() {
             const storedCipherKey = localStorage.getItem(cipherKeyStorageKey);
-            keyBox.value = storedCipherKey || defaultCipherKey;
+            if (storedCipherKey && isValidCipherKey(storedCipherKey)) {
+                keyBox.value = storedCipherKey;
+            } else {
+                keyBox.value = defaultCipherKey;
+                if (storedCipherKey) {
+                    localStorage.removeItem(cipherKeyStorageKey);
+                }
+            }
             updateStats();
         }
 
@@ -804,7 +812,6 @@
         keyBox.addEventListener("input", function() {
             saveCipherKey();
             updateStats();
-            modeLabel.textContent = "密钥已更新";
         });
 
         inputBox.addEventListener("keydown", function(event) {
