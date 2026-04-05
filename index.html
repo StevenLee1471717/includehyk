@@ -126,6 +126,10 @@
             gap: 18px;
         }
 
+        .key-panel {
+            margin-bottom: 18px;
+        }
+
         .panel {
             padding: 18px;
             border-radius: 24px;
@@ -186,6 +190,35 @@
 
         textarea::placeholder {
             color: rgba(236, 243, 255, 0.4);
+        }
+
+        .key-input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(6, 12, 24, 0.72);
+            color: var(--text-main);
+            font: inherit;
+            outline: none;
+            transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+        }
+
+        .key-input:focus {
+            border-color: rgba(98, 165, 255, 0.85);
+            box-shadow: 0 0 0 4px rgba(98, 165, 255, 0.14);
+            transform: translateY(-1px);
+        }
+
+        .key-input::placeholder {
+            color: rgba(236, 243, 255, 0.4);
+        }
+
+        .key-note {
+            margin: 10px 0 0;
+            color: var(--text-soft);
+            font-size: 0.92rem;
+            line-height: 1.65;
         }
 
         .button-container {
@@ -456,6 +489,15 @@
                 </div>
             </div>
 
+            <div class="panel key-panel">
+                <div class="panel-header">
+                    <label for="keyBox">加密密钥</label>
+                    <span id="keyMeta">32 / 32 字符</span>
+                </div>
+                <input id="keyBox" class="key-input" type="text" placeholder="请输入 32 个互不重复的字符作为密钥。" autocomplete="off" spellcheck="false">
+                <p class="key-note">密钥会保存在当前浏览器中，加密和解密都将使用这组 32 个不重复字符。</p>
+            </div>
+
             <div class="editor-grid">
                 <div class="panel">
                     <div class="panel-header">
@@ -492,7 +534,7 @@
                 </div>
                 <div class="info-card">
                     <strong id="storageHint">草稿未保存</strong>
-                    <span>输入会自动保存在当前浏览器。</span>
+                    <span>输入和密钥会自动保存在当前浏览器。</span>
                 </div>
             </div>
         </section>
@@ -501,8 +543,10 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script>
-        const chineseCharacters = "这就是我们的刘哥汉堡炸鸡配可乐放学时间消狂拽酷炫小让对手蒙圈拜服";
+        const defaultCipherKey = "这就是我们的刘哥汉堡炸鸡配可乐放学时间消狂拽酷炫小让对手蒙圈拜服";
+        const KEY_LENGTH = 32;
         const draftStorageKey = "cipher-tool-draft";
+        const cipherKeyStorageKey = "cipher-tool-key";
         const PARTICLE_COMPACT_BREAKPOINT = 900;
         const MOBILE_PARTICLE_COUNT = 28;
         const DESKTOP_PARTICLE_COUNT = 48;
@@ -515,7 +559,9 @@
         const SECONDARY_GLOW_OFFSET = 120;
         const inputBox = document.getElementById("inputBox");
         const outputBox = document.getElementById("outputBox");
+        const keyBox = document.getElementById("keyBox");
         const toast = document.getElementById("toast");
+        const keyMeta = document.getElementById("keyMeta");
         const inputMeta = document.getElementById("inputMeta");
         const outputMeta = document.getElementById("outputMeta");
         const modeLabel = document.getElementById("modeLabel");
@@ -537,14 +583,30 @@
         }
 
         function updateStats() {
+            const cipherKey = keyBox.value;
+            const currentKeyLength = Array.from(cipherKey).length;
+
+            if (isValidCipherKey(cipherKey)) {
+                keyMeta.textContent = currentKeyLength + " / " + KEY_LENGTH + " 字符 · 密钥可用";
+                keyBox.removeAttribute("aria-invalid");
+            } else {
+                keyMeta.textContent = currentKeyLength + " / " + KEY_LENGTH + " 字符 · 需要 " + KEY_LENGTH + " 个不重复字符";
+                keyBox.setAttribute("aria-invalid", "true");
+            }
+
             inputMeta.textContent = inputBox.value.length + " 个字符";
             outputMeta.textContent = outputBox.value.length + " 个字符";
             binaryHint.textContent = calculateBinaryHint(inputBox.value) + " bit";
         }
 
         function isEncryptedText(text) {
+            const cipherKey = getCipherKey();
+            if (!cipherKey) {
+                return false;
+            }
+
             return text && Array.from(text).every(function(character) {
-                return chineseCharacters.indexOf(character) !== -1;
+                return cipherKey.indexOf(character) !== -1;
             });
         }
 
@@ -555,9 +617,32 @@
             return text.length * (isEncryptedText(text) ? 5 : 16);
         }
 
+        function isValidCipherKey(cipherKey) {
+            const characters = Array.from(cipherKey);
+            return characters.length === KEY_LENGTH && new Set(characters).size === characters.length;
+        }
+
+        function getCipherKey() {
+            return isValidCipherKey(keyBox.value) ? keyBox.value : null;
+        }
+
+        function getCipherKeyOrShowError() {
+            const cipherKey = getCipherKey();
+            if (!cipherKey) {
+                showToast("请先填写 " + KEY_LENGTH + " 个互不重复的密钥字符。", "error");
+                keyBox.focus();
+                return null;
+            }
+            return cipherKey;
+        }
+
         function saveDraft() {
             localStorage.setItem(draftStorageKey, inputBox.value);
             storageHint.textContent = inputBox.value ? "草稿已自动保存" : "草稿已清空";
+        }
+
+        function saveCipherKey() {
+            localStorage.setItem(cipherKeyStorageKey, keyBox.value);
         }
 
         function restoreDraft() {
@@ -569,10 +654,27 @@
             updateStats();
         }
 
+        function restoreCipherKey() {
+            const storedCipherKey = localStorage.getItem(cipherKeyStorageKey);
+            if (storedCipherKey && isValidCipherKey(storedCipherKey)) {
+                keyBox.value = storedCipherKey;
+            } else {
+                keyBox.value = defaultCipherKey;
+                if (storedCipherKey) {
+                    localStorage.removeItem(cipherKeyStorageKey);
+                }
+            }
+            updateStats();
+        }
+
         function encryptText() {
             const inputText = inputBox.value;
             if (!inputText) {
                 showToast("请先输入要加密的内容。", "error");
+                return;
+            }
+            const cipherKey = getCipherKeyOrShowError();
+            if (!cipherKey) {
                 return;
             }
 
@@ -590,10 +692,10 @@
             for (let i = 0; i < binaryString.length; i += 5) {
                 const binaryGroup = binaryString.substring(i, i + 5);
                 const decimalValue = parseInt(binaryGroup, 2);
-                if (decimalValue >= 0 && decimalValue < chineseCharacters.length) {
-                    resultText += chineseCharacters[decimalValue];
+                if (decimalValue >= 0 && decimalValue < cipherKey.length) {
+                    resultText += cipherKey[decimalValue];
                 } else {
-                    showToast("加密失败，生成的二进制数超出汉字序列范围。", "error");
+                    showToast("加密失败，生成的二进制数超出密钥字符范围。", "error");
                     return;
                 }
             }
@@ -610,12 +712,16 @@
                 showToast("请先输入要解密的密文。", "error");
                 return;
             }
+            const cipherKey = getCipherKeyOrShowError();
+            if (!cipherKey) {
+                return;
+            }
 
             let binaryString = "";
             for (let i = 0; i < encryptedText.length; i++) {
-                const charIndex = chineseCharacters.indexOf(encryptedText[i]);
+                const charIndex = cipherKey.indexOf(encryptedText[i]);
                 if (charIndex === -1) {
-                    showToast("解密失败，输入内容包含无效汉字。", "error");
+                    showToast("解密失败，输入内容包含当前密钥外的字符。", "error");
                     return;
                 }
                 binaryString += charIndex.toString(2).padStart(5, "0");
@@ -701,6 +807,11 @@
             saveDraft();
             updateStats();
             modeLabel.textContent = "等待操作";
+        });
+
+        keyBox.addEventListener("input", function() {
+            saveCipherKey();
+            updateStats();
         });
 
         inputBox.addEventListener("keydown", function(event) {
@@ -821,6 +932,7 @@
             });
         }
 
+        restoreCipherKey();
         restoreDraft();
         setupCursorGlow();
         setupParticles();
